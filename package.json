@@ -17,7 +17,8 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "workspaceContains:.catkin_workspace",
+    "workspaceContains:.catkin_tools"
   ],
   "main": "./out/src/extension",
   "contributes": {

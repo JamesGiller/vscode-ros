@@ -17,6 +17,11 @@ let context: vscode.ExtensionContext;
 export let baseDir: string;
 
 /**
+ * The build system in use.
+ */
+export let buildSystem: string;
+
+/**
  * The sourced ROS environment.
  */
 export let env: any;
@@ -31,16 +36,13 @@ export let onDidChangeEnv = onEnvChanged.event;
 /**
  * Subscriptions to dispose when the environment is changed.
  */
-let subscriptions = <vscode.Disposable[]> [];
+let subscriptions = <vscode.Disposable[]>[];
 
 export async function activate(ctx: vscode.ExtensionContext) {
   // Activate if we're in a catkin workspace.
   context = ctx;
-  baseDir = await utils.findCatkinWorkspace(vscode.workspace.rootPath);
-
-  if (!baseDir) {
-    return;
-  }
+  baseDir = vscode.workspace.rootPath;
+  buildSystem = await utils.determineBuildSystem(baseDir);
 
   // Activate components when the ROS env is changed.
   context.subscriptions.push(onDidChangeEnv(activateEnvironment));

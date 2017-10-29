@@ -1,7 +1,6 @@
 import * as extension from "./extension";
 import * as pfs from "./promise-fs";
 import * as cp from "child_process";
-import { dirname } from "path";
 import * as _ from "underscore";
 import * as vscode from "vscode";
 
@@ -13,15 +12,15 @@ export function getConfig(): vscode.WorkspaceConfiguration {
 }
 
 /**
- * Traverses up directories to find a catkin workspace.
+ * Determines build system in use by checking for unique auto-generated files.
  */
-export async function findCatkinWorkspace(dir: string): Promise<string> {
-  while (dir && dirname(dir) !== dir) {
-    if (await pfs.exists(`${dir}/.catkin_workspace`)) {
-      return dir;
+export async function determineBuildSystem(workspaceDir: string): Promise<string> {
+  if (workspaceDir) {
+    if (await pfs.exists(`${workspaceDir}/.catkin_workspace`)) {
+      return "CatkinMake";
+    } else if (await pfs.exists(`${workspaceDir}/.catkin_tools`)) {
+      return "CatkinTools";
     }
-
-    dir = dirname(dir);
   }
 }
 
