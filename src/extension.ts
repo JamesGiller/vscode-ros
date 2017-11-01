@@ -54,14 +54,24 @@ export async function activate(ctx: vscode.ExtensionContext) {
 
   // Source the environment, and re-source on config change.
   let config = utils.getConfig();
+  updateHiddenSubspaces(config);
 
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
     const updatedConfig = utils.getConfig();
-    const fields = Object.keys(config).filter(k => !(config[k] instanceof Function));
-    const changed = fields.some(key => updatedConfig[key] !== config[key]);
+    const changed = Object.keys(config)
+      .filter(k => !(config[k] instanceof Function))
+      .reduce((obj, key) => {
+        if (updatedConfig[key] !== config[key]) {
+          obj[key] = updatedConfig[key];
+        }
+        return obj;
+      }, {});
 
-    if (changed) {
-      sourceRosAndWorkspace();
+    if (Object.getOwnPropertyNames(changed).length > 0) {
+      updateHiddenSubspaces(changed);
+      if (changed["distro"] !== undefined) {
+        sourceRosAndWorkspace();
+      }
     }
 
     config = updatedConfig;
@@ -159,4 +169,44 @@ async function sourceRosAndWorkspace(): Promise<void> {
 
   // Notify listeners the environment has changed.
   onEnvChanged.fire();
+}
+
+/**
+ * When the configuration changes, update which subspaces should be hidden
+ */
+async function updateHiddenSubspaces(newConfig: object): Promise<void> {
+  const subspaceDirNames = {
+    "hideBuildSpace": "build",
+    "hideDevelSpace": "devel",
+    "hideInstallSpace": "install",
+    "hideLogSpace": "logs"
+  }
+
+  let promises = <Promise<void>[]>[];
+
+  for (var key in newConfig) {
+    if (subspaceDirNames[key] !== undefined) {
+      promises.push(setHidden(subspaceDirNames[key], newConfig[key]));
+    }
+  }
+
+  await Promise.all(promises);
+}
+
+/**
+ * Set whether the given subspace is hidden from Explorer and Search
+ */
+async function setHidden(subspaceDirName: string, isHidden: boolean): Promise<void> {
+  let updateExclude = function (section): Thenable<void> {
+    let excludeConfig = section.get("exclude", {});
+    excludeConfig[subspaceDirName] = isHidden;
+    return section.update("exclude", excludeConfig);
+  };
+
+  let explorerConfig = vscode.workspace.getConfiguration("files");
+  await updateExclude(explorerConfig)
+    .then(() => {
+      let searchConfig = vscode.workspace.getConfiguration("search");
+      updateExclude(searchConfig);
+    });
 }

@@ -66,6 +66,26 @@
         "ros.distro": {
           "type": "string",
           "description": "ROS distro name to use (kinetic, jade, ...)"
+        },
+        "ros.hideBuildSpace": {
+          "type": "boolean",
+          "description": "Whether to hide the build directory from Explorer and Search",
+          "default": true
+        },
+        "ros.hideDevelSpace": {
+          "type": "boolean",
+          "description": "Whether to hide the devel directory from Explorer and Search",
+          "default": true
+        },
+        "ros.hideInstallSpace": {
+          "type": "boolean",
+          "description": "Whether to hide the install directory from Explorer and Search",
+          "default": true
+        },
+        "ros.hideLogSpace": {
+          "type": "boolean",
+          "description": "Whether to hide the log directory from Explorer and Search",
+          "default": true
         }
       }
     },
